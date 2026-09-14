@@ -55,7 +55,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
 
   const generateSummary = async (eventId: string) => {
     setLoadingSummary(true);
-    const minWaitTime = 5000; // 5 seconds fake loader
+    const minWaitTime = 2000; // 2 seconds smooth loader
     const startTime = Date.now();
     try {
       const res = await fetch('/api/admin/event-summary', {

@@ -12,7 +12,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { ThemeToggle } from '@/components/theme-toggle';
-import Image from "next/image";
 import { BrandLogo } from '@/components/BrandLogo';
 import { Plus, LogOut, ExternalLink, Pencil, Eye, Copy, CheckCircle2, Loader2, Calendar, User, FileSpreadsheet, FolderOpen, Zap, Shield, HomeIcon, Trash2 } from 'lucide-react';
 
