@@ -8,12 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter, DrawerClose } from '@/components/ui/drawer';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { ThemeToggle } from '@/components/theme-toggle';
 import Image from "next/image";
 import { BrandLogo } from '@/components/BrandLogo';
-import { Plus, LogOut, ExternalLink, Pencil, Eye, Copy, CheckCircle2, Loader2, Calendar, User, FileSpreadsheet, FolderOpen, Zap, Shield, HomeIcon } from 'lucide-react';
+import { Plus, LogOut, ExternalLink, Pencil, Eye, Copy, CheckCircle2, Loader2, Calendar, User, FileSpreadsheet, FolderOpen, Zap, Shield, HomeIcon, Trash2 } from 'lucide-react';
 
 interface EventData {
   eventId: string;
@@ -38,6 +39,10 @@ export default function AdminPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editEvent, setEditEvent] = useState({ eventId: '', eventName: '', username: '', password: '', sheetUrl: '', driveUrl: '' });
+  const [deleting, setDeleting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{eventId: string; eventName: string} | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [actionOverlay, setActionOverlay] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/auth/session')
@@ -62,6 +67,7 @@ export default function AdminPage() {
   const handleCreate = async () => {
     if (!newEvent.eventName || !newEvent.username || !newEvent.password || !newEvent.sheetUrl || !newEvent.driveUrl) { toast.error('All fields are required.'); return; }
     setCreating(true);
+    setActionOverlay('Creating event...');
     try {
       const res = await fetch('/api/admin/create-event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newEvent) });
       const data = await res.json();
@@ -71,7 +77,7 @@ export default function AdminPage() {
       setCreateOpen(false);
       fetchEvents();
     } catch (err) { toast.error(err instanceof Error ? err.message : 'Failed to create event.'); }
-    finally { setCreating(false); }
+    finally { setCreating(false); setActionOverlay(null); }
   };
 
   const handleEdit = async () => {
@@ -90,6 +96,27 @@ export default function AdminPage() {
   const openEdit = (ev: EventData) => {
     setEditEvent({ eventId: ev.eventId, eventName: ev.eventName, username: ev.username, password: '', sheetUrl: ev.sheetId, driveUrl: ev.driveId });
     setEditOpen(true);
+  };
+
+  const openDeleteConfirm = (eventId: string, eventName: string) => {
+    setDeleteTarget({ eventId, eventName });
+    setConfirmDelete(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setConfirmDelete(false);
+    setDeleting(true);
+    setActionOverlay('Deleting event...');
+    try {
+      const res = await fetch('/api/admin/delete-event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ eventId: deleteTarget.eventId }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      await new Promise(r => setTimeout(r, 1500));
+      toast.success('Event "' + deleteTarget.eventName + '" deleted.');
+      fetchEvents();
+    } catch (err) { toast.error(err instanceof Error ? err.message : 'Failed to delete event.'); }
+    finally { setDeleting(false); setActionOverlay(null); setDeleteTarget(null); }
   };
 
   const handleLogout = async () => { await fetch('/api/auth/logout', { method: 'POST' }); router.replace('/login'); };
@@ -176,6 +203,7 @@ export default function AdminPage() {
                     <Button variant="secondary" size="sm" className="flex-1 h-9 rounded-lg hover:bg-primary hover:text-primary-foreground transition-colors font-semibold" onClick={() => router.push(`/admin/event/${ev.eventId}`)}><Eye className="w-4 h-4 mr-1.5" /> Details</Button>
                     <Button variant="outline" size="sm" className="flex-1 h-9 rounded-lg border-border/50 hover:bg-accent transition-colors" onClick={() => openEdit(ev)}><Pencil className="w-4 h-4 mr-1.5" /> Edit</Button>
                     <a href={`https://docs.google.com/spreadsheets/d/${ev.sheetId}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center h-9 w-9 shrink-0 rounded-lg border border-border/50 hover:bg-accent hover:text-primary transition-colors"><ExternalLink className="w-4 h-4" /></a>
+                    <button onClick={() => openDeleteConfirm(ev.eventId, ev.eventName)} disabled={deleting} className="inline-flex items-center justify-center h-9 w-9 shrink-0 rounded-lg border border-red-500/30 text-red-500 hover:bg-red-500/10 hover:border-red-500/60 transition-colors disabled:opacity-50" title="Delete event"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </CardContent>
               </Card>
@@ -203,9 +231,35 @@ export default function AdminPage() {
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
+      {/* Delete confirmation dialog */}
+      <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <DialogContent className="sm:max-w-md border-border/60 bg-card">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg"><Trash2 className="w-5 h-5 text-red-500" /> Delete Event</DialogTitle>
+            <DialogDescription className="pt-2 text-sm leading-relaxed">
+              Are you sure you want to delete <span className="font-semibold text-foreground">&quot;{deleteTarget?.eventName}&quot;</span>? This will permanently remove the event and its staff login credentials. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2 pt-2">
+            <Button variant="outline" className="flex-1 h-11 rounded-lg" onClick={() => setConfirmDelete(false)}>Cancel</Button>
+            <Button variant="destructive" className="flex-1 h-11 rounded-lg gap-2" onClick={handleDelete} disabled={deleting}><Trash2 className="w-4 h-4" /> Delete Event</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Themed action loader overlay */}
+      {actionOverlay && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-12 h-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+            <p className="text-sm font-medium text-foreground animate-pulse">{actionOverlay}</p>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
+
 
 
 

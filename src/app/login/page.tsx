@@ -23,6 +23,7 @@ export default function LoginPage() {
   const [adminUsername, setAdminUsername] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [adminLoading, setAdminLoading] = useState(false);
+  const [loginOverlay, setLoginOverlay] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/auth/session')
@@ -34,27 +35,31 @@ export default function LoginPage() {
   const handleStaffLogin = async () => {
     if (!staffUsername.trim() || !staffPassword) { toast.error('Username and password are required.'); return; }
     setStaffLoading(true);
+    setLoginOverlay('Signing in...');
     try {
       const res = await fetch('/api/auth/event-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: staffUsername, password: staffPassword }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Login failed');
       toast.success('Login successful!');
+      await new Promise(r => setTimeout(r, 1500));
       router.push(data.redirectTo || '/scanner');
     } catch (err) { toast.error(err instanceof Error ? err.message : 'Login failed.'); }
-    finally { setStaffLoading(false); }
+    finally { setStaffLoading(false); setLoginOverlay(null); }
   };
 
   const handleAdminLogin = async () => {
     if (!adminUsername.trim() || !adminPassword) { toast.error('Username and password are required.'); return; }
     setAdminLoading(true);
+    setLoginOverlay('Authenticating...');
     try {
       const res = await fetch('/api/auth/admin-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: adminUsername, password: adminPassword }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Login failed');
       toast.success('Welcome, Admin!');
+      await new Promise(r => setTimeout(r, 1500));
       router.push(data.redirectTo || '/admin');
     } catch (err) { toast.error(err instanceof Error ? err.message : 'Login failed.'); }
-    finally { setAdminLoading(false); }
+    finally { setAdminLoading(false); setLoginOverlay(null); }
   };
 
   if (checkingSession) return (<main className="min-h-dvh bg-background flex items-center justify-center"><div className="spinner w-10 h-10" /></main>);
@@ -132,6 +137,15 @@ export default function LoginPage() {
           </Card>
         </motion.div>
       </motion.div>
+      {/* Themed login loader overlay */}
+      {loginOverlay && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-12 h-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+            <p className="text-sm font-medium text-foreground animate-pulse">{loginOverlay}</p>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
