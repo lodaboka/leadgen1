@@ -4,10 +4,9 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, Variants } from 'framer-motion';
-import Image from "next/image";
 import { BrandLogo } from '@/components/BrandLogo';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { Zap, ArrowRight, FolderPlus, FileSpreadsheet, Share2, Rocket, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, FolderPlus, FileSpreadsheet, Share2, Rocket, CheckCircle2 } from 'lucide-react';
 
 export default function LandingPage() {
   const router = useRouter();

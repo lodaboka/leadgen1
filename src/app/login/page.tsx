@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,9 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { toast } from 'sonner';
-import Image from "next/image";
 import { BrandLogo } from '@/components/BrandLogo';
-import { Zap, Loader2, ArrowRight, ShieldCheck, UserCircle } from 'lucide-react';
+import { Loader2, ArrowRight, ShieldCheck, UserCircle } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();

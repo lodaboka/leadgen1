@@ -4,12 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { LeadCaptureForm } from "@/components/LeadCaptureForm";
 import { Button } from '@/components/ui/button';
-import Image from "next/image";
 import { BrandLogo } from '@/components/BrandLogo';
-import { Zap, LayoutDashboard, LogOut, User, FileSpreadsheet, FolderOpen, Loader2, History, HomeIcon } from 'lucide-react';
+import { LayoutDashboard, LogOut, History, HomeIcon } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useTypewriter } from '@/hooks/useTypewriter';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerTrigger } from '@/components/ui/drawer';
 
 interface SessionData {
   username: string;
@@ -58,17 +56,7 @@ export default function Home() {
         <div className="max-w-md mx-auto px-5 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <BrandLogo size="sm" />
-            <div className="min-w-0">
-              
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <div className="flex items-center gap-1 bg-green-500/10 text-green-500 px-1.5 py-0.5 rounded-md border border-green-500/20">
-                  <User className="w-2.5 h-2.5" />
-                  <p className="text-[9px] font-bold uppercase tracking-wider truncate">
-                    {session?.username}
-                  </p>
-                </div>
-              </div>
-            </div>
+
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
