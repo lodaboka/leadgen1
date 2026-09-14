@@ -10,10 +10,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Image is required' }, { status: 400 });
     }
 
-    const geminiApiKey = process.env.GEMINI_API_KEY || ""; 
+    const geminiApiKey = process.env.GEMINI_API_KEY || "";
     const groqApiKey = process.env.GROQ_API_KEY || "";
-    
-    const prompt = 
+
+    const prompt = `
       You are an elite AI extraction assistant designed to process business cards and IDs with 100% accuracy.
       Analyze this image carefully. You MUST output a PERFECTLY FORMATTED, STRICT JSON OBJECT.
       
@@ -29,13 +29,13 @@ export async function POST(req: Request) {
       CRITICAL: Return ONLY a valid JSON object. No markdown, no backticks, no explanatory text.
       The JSON MUST have EXACTLY these keys: "Name", "Email", "Mobile", "Age", "Gender", "Address", "Company", "face_detected".
       If a field is missing, return an empty string "". 
-    ;
+    `;
 
     let extractedData;
 
-    // ── Attempt 1: Groq (Primary) ──
+    // -- Attempt 1: Groq (Primary) --
     try {
-      console.log("[OCR] Attempting Groq...");
+      console.log('[OCR] Attempting Groq...');
       const groq = new Groq({ apiKey: groqApiKey });
       const chatCompletion = await groq.chat.completions.create({
         messages: [
@@ -57,14 +57,14 @@ export async function POST(req: Request) {
 
       const responseText = chatCompletion.choices[0]?.message?.content || "{}";
       extractedData = JSON.parse(responseText);
-      console.log("[OCR] Groq succeeded.");
+      console.log('[OCR] Groq succeeded.');
 
     } catch (groqError) {
-      console.warn("[OCR] Groq failed:", groqError);
+      console.warn('[OCR] Groq failed:', groqError);
 
-      // ── Attempt 2: Gemini (Fallback) ──
+      // -- Attempt 2: Gemini (Fallback) --
       try {
-        console.log("[OCR] Attempting Gemini...");
+        console.log('[OCR] Attempting Gemini...');
         const genAI = new GoogleGenerativeAI(geminiApiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
         const base64Data = image.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
@@ -80,15 +80,15 @@ export async function POST(req: Request) {
 
         const result = await model.generateContent([prompt, ...imageParts]);
         const responseText = result.response.text();
-        const cleanedJsonString = responseText.replace(/`json/g, '').replace(/`/g, '').trim();
+        const cleanedJsonString = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
         extractedData = JSON.parse(cleanedJsonString);
-        console.log("[OCR] Gemini succeeded.");
+        console.log('[OCR] Gemini succeeded.');
 
       } catch (geminiError) {
-        console.error("[OCR] All providers failed:", geminiError);
-        return NextResponse.json({ 
+        console.error('[OCR] All providers failed:', geminiError);
+        return NextResponse.json({
           error: 'Service temporarily unavailable due to high demand. Please try again in a moment or contact support to upgrade your plan.',
-          allFailed: true 
+          allFailed: true
         }, { status: 503 });
       }
     }
@@ -108,9 +108,9 @@ export async function POST(req: Request) {
 
   } catch (error) {
     console.error("API Error:", error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Service temporarily unavailable due to high demand. Please try again in a moment or contact support to upgrade your plan.',
-      allFailed: true 
+      allFailed: true
     }, { status: 503 });
   }
 }
