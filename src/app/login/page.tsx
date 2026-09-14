@@ -41,7 +41,6 @@ export default function LoginPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Login failed');
       toast.success('Login successful!');
-      await new Promise(r => setTimeout(r, 1500));
       router.push(data.redirectTo || '/scanner');
     } catch (err) { toast.error(err instanceof Error ? err.message : 'Login failed.'); }
     finally { setStaffLoading(false); setLoginOverlay(null); }
@@ -56,7 +55,6 @@ export default function LoginPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Login failed');
       toast.success('Welcome, Admin!');
-      await new Promise(r => setTimeout(r, 1500));
       router.push(data.redirectTo || '/admin');
     } catch (err) { toast.error(err instanceof Error ? err.message : 'Login failed.'); }
     finally { setAdminLoading(false); setLoginOverlay(null); }

@@ -112,7 +112,6 @@ export default function AdminPage() {
       const res = await fetch('/api/admin/delete-event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ eventId: deleteTarget.eventId }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      await new Promise(r => setTimeout(r, 1500));
       toast.success('Event "' + deleteTarget.eventName + '" deleted.');
       fetchEvents();
     } catch (err) { toast.error(err instanceof Error ? err.message : 'Failed to delete event.'); }

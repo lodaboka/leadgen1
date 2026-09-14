@@ -59,6 +59,14 @@ export function LeadCaptureForm() {
   const [livePhotoPreview, setLivePhotoPreview] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [needsPhoto, setNeedsPhoto] = useState(false);
+  const [scanElapsed, setScanElapsed] = useState(0);
+
+  // Timer to track scan duration for "taking longer" message
+  React.useEffect(() => {
+    if (mode !== 'processing') { setScanElapsed(0); return; }
+    const scanTimerInterval = setInterval(() => setScanElapsed(prev => prev + 1), 1000);
+    return () => clearInterval(scanTimerInterval);
+  }, [mode]);
 
   const cardInputRef = useRef<HTMLInputElement>(null);
   const liveInputRef = useRef<HTMLInputElement>(null);
@@ -114,7 +122,12 @@ export function LeadCaptureForm() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to process card");
+      if (!res.ok) {
+        if (data.allFailed) {
+          throw new Error("We're experiencing high demand right now. Please try again in a moment.");
+        }
+        throw new Error(data.error || "Failed to process card");
+      }
 
       let genderValue = data.result.gender;
       if (!["Male", "Female", "Other", "N/A"].includes(genderValue)) genderValue = "N/A";
@@ -275,7 +288,13 @@ export function LeadCaptureForm() {
           <motion.div key="processing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center flex-1 py-12">
             <div className="spinner w-12 h-12 mb-6" />
             <h2 className="text-xl font-bold text-foreground">Analyzing Card...</h2>
-            <p className="text-muted-foreground text-sm mt-2 text-center">Using AI to extract details. This takes a few seconds.</p>
+            <p className="text-muted-foreground text-sm mt-2 text-center">
+              {scanElapsed < 8
+                ? 'Using AI to extract details. This takes a few seconds.'
+                : scanElapsed < 15
+                  ? 'This is taking a bit longer than usual. Hang tight...'
+                  : 'Almost there — processing with backup services...'}
+            </p>
           </motion.div>
         )}
 

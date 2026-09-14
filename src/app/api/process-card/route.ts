@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     const geminiApiKey = process.env.GEMINI_API_KEY || ""; 
     const groqApiKey = process.env.GROQ_API_KEY || "";
     
-    const prompt = `
+    const prompt = 
       You are an elite AI extraction assistant designed to process business cards and IDs with 100% accuracy.
       Analyze this image carefully. You MUST output a PERFECTLY FORMATTED, STRICT JSON OBJECT.
       
@@ -29,12 +29,13 @@ export async function POST(req: Request) {
       CRITICAL: Return ONLY a valid JSON object. No markdown, no backticks, no explanatory text.
       The JSON MUST have EXACTLY these keys: "Name", "Email", "Mobile", "Age", "Gender", "Address", "Company", "face_detected".
       If a field is missing, return an empty string "". 
-    `;
+    ;
 
     let extractedData;
 
+    // ── Attempt 1: Groq (Primary) ──
     try {
-      // 1st Attempt: Groq Primary
+      console.log("[OCR] Attempting Groq...");
       const groq = new Groq({ apiKey: groqApiKey });
       const chatCompletion = await groq.chat.completions.create({
         messages: [
@@ -56,28 +57,40 @@ export async function POST(req: Request) {
 
       const responseText = chatCompletion.choices[0]?.message?.content || "{}";
       extractedData = JSON.parse(responseText);
+      console.log("[OCR] Groq succeeded.");
 
     } catch (groqError) {
-      console.warn("Groq API failed, falling back to Gemini 3.6 Flash:", groqError);
+      console.warn("[OCR] Groq failed:", groqError);
 
-      // 2nd Attempt: Gemini Fallback
-      const genAI = new GoogleGenerativeAI(geminiApiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-3.8-flash" });
-      const base64Data = image.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
+      // ── Attempt 2: Gemini (Fallback) ──
+      try {
+        console.log("[OCR] Attempting Gemini...");
+        const genAI = new GoogleGenerativeAI(geminiApiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const base64Data = image.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
 
-      const imageParts = [
-        {
-          inlineData: {
-            data: base64Data,
-            mimeType: "image/jpeg"
+        const imageParts = [
+          {
+            inlineData: {
+              data: base64Data,
+              mimeType: "image/jpeg"
+            },
           },
-        },
-      ];
+        ];
 
-      const result = await model.generateContent([prompt, ...imageParts]);
-      const responseText = result.response.text();
-      const cleanedJsonString = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-      extractedData = JSON.parse(cleanedJsonString);
+        const result = await model.generateContent([prompt, ...imageParts]);
+        const responseText = result.response.text();
+        const cleanedJsonString = responseText.replace(/`json/g, '').replace(/`/g, '').trim();
+        extractedData = JSON.parse(cleanedJsonString);
+        console.log("[OCR] Gemini succeeded.");
+
+      } catch (geminiError) {
+        console.error("[OCR] All providers failed:", geminiError);
+        return NextResponse.json({ 
+          error: 'Service temporarily unavailable due to high demand. Please try again in a moment or contact support to upgrade your plan.',
+          allFailed: true 
+        }, { status: 503 });
+      }
     }
 
     return NextResponse.json({
@@ -94,7 +107,10 @@ export async function POST(req: Request) {
     });
 
   } catch (error) {
-    console.error("API Error (All Models Failed):", error);
-    return NextResponse.json({ error: 'Failed to process card image via both APIs' }, { status: 500 });
+    console.error("API Error:", error);
+    return NextResponse.json({ 
+      error: 'Service temporarily unavailable due to high demand. Please try again in a moment or contact support to upgrade your plan.',
+      allFailed: true 
+    }, { status: 503 });
   }
 }
