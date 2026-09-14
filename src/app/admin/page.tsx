@@ -113,6 +113,7 @@ export default function AdminPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       toast.success('Event "' + deleteTarget.eventName + '" deleted.');
+      await new Promise(r => setTimeout(r, 2000));
       fetchEvents();
     } catch (err) { toast.error(err instanceof Error ? err.message : 'Failed to delete event.'); }
     finally { setDeleting(false); setActionOverlay(null); setDeleteTarget(null); }

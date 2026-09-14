@@ -66,7 +66,7 @@ export async function POST(req: Request) {
       try {
         console.log('[OCR] Attempting Gemini...');
         const genAI = new GoogleGenerativeAI(geminiApiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
         const base64Data = image.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
 
         const imageParts = [
@@ -114,3 +114,4 @@ export async function POST(req: Request) {
     }, { status: 503 });
   }
 }
+
